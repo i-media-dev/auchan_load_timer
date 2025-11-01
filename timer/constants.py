@@ -25,10 +25,10 @@ TIMEOUT_SCREENSHOT = 1000
 TIMEOUT_PAGE = 60000
 """Таймаут запроса к странице."""
 
-ADDRESS = 'https://feeds.i-media.ru/scripts/eapteka_timer/media/'
+ADDRESS = 'https://feeds.i-media.ru/scripts/auchan_load_timer/media/'
 """Путь к файлу на ftp."""
 
-TABLE_NAME = 'loading_reports'
+TABLE_NAME = 'auchan_loading_reports'
 
 TIME_DELAY = 5
 """Время повторного реконнекта к дб в секундах."""

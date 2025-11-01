@@ -17,7 +17,7 @@ from timer.logging_config import setup_logging
 
 setup_logging()
 
-eapteka_bot = TeleBot(os.getenv('EAPTEKA_TOKEN_TELEGRAM'))
+eapteka_bot = TeleBot(os.getenv('AUCHAN_TOKEN_TELEGRAM'))
 
 
 def send_bot_message(
@@ -176,7 +176,7 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
         page_name = output_file.split('_')[1]
         status_code = response.status if response else 0
         screenshot = f'{ADDRESS}{output_file.split('_')[0]}/{png_file}'
-        if 'eapteka' in output_file:
+        if 'auchan' in output_file:
             send_bot_message(url, status_code, avg_time, screenshot)
 
         if TABLE_NAME in tables_list:
