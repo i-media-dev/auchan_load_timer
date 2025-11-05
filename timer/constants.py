@@ -10,7 +10,7 @@ CRY_ROBOT = 'robot/cry-robot.png'
 WAIT_ROBOT = 'robot/wait-robot.png'
 """Стикер ждущего робота"""
 
-ALERT_ROBOT = 'robot/alert-robot.png'
+ALERT_ROBOT = 'robot/dead_bird-robot.png'
 """Стикер робота для общих уведомлений."""
 
 REDUCTION = 1000
@@ -43,6 +43,10 @@ TIME_FORMAT = '%H:%M:%S'
 """Формат времени по умолчанию."""
 
 SHOPS = {
+    'pyaterochka': (
+        'https://5ka.ru/',
+        'https://5ka.ru/cart/',
+    ),
     'perekrestok': (
         'https://www.perekrestok.ru/',
         'https://www.perekrestok.ru/cart',
@@ -53,12 +57,12 @@ SHOPS = {
     ),
     'auchan': (
         'https://www.auchan.ru/',
-        'https://www.auchan.ru/cart/'
+        'https://www.auchan.ru/cart/',
     ),
     'globus': (
         'https://online.globus.ru/',
         'https://online.globus.ru/cart',
-    )
+    ),
 }
 """Словарь всех сайтов с urls главной страницы и корзины."""
 
@@ -69,18 +73,14 @@ CLIENT_IDS = (os.getenv('GROUP_ID'),)
 """Кортеж доступных id."""
 
 STATUS_CODES = {
-    # Успешные ответы
+    0: 'Не удалось дождаться ответа от сервера (сайт лежит)',
     200: 'OK - Успешный запрос',
     201: 'Created - Ресурс создан',
     202: 'Accepted - Запрос принят, но еще не обработан',
     204: 'No Content - Нет содержимого для возврата',
-
-    # Перенаправления
     301: 'Moved Permanently - Постоянное перенаправление',
     302: 'Found - Временное перенаправление',
     304: 'Not Modified - Контент не изменился',
-
-    # Ошибки клиента
     400: 'Bad Request - Неверный запрос',
     401: 'Unauthorized - Требуется аутентификация',
     403: 'Forbidden - Доступ запрещен',
@@ -88,8 +88,6 @@ STATUS_CODES = {
     405: 'Method Not Allowed - Метод не разрешен',
     408: 'Request Timeout - Таймаут запроса',
     429: 'Too Many Requests - Слишком много запросов',
-
-    # Ошибки сервера
     500: 'Internal Server Error - Внутренняя ошибка сервера',
     502: 'Bad Gateway - Плохой шлюз',
     503: 'Service Unavailable - Сервис недоступен',

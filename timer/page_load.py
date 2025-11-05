@@ -4,6 +4,7 @@ import time
 from datetime import datetime as dt
 from pathlib import Path
 
+from fake_useragent import UserAgent
 from playwright.async_api import async_playwright
 from telebot import TeleBot
 
@@ -64,6 +65,7 @@ def send_bot_message(
 
 @connection_db
 async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
+    ua = UserAgent()
     async with async_playwright() as p:
         attempt = 0
         repeat_times_list = []
@@ -81,11 +83,8 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
             ]
         )
 
-        user_agent = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/127.0.0.0 Safari/537.36"
-        )
+        user_agent = ua.random
+
         headers = {
             "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
             "Referer": url,
@@ -112,6 +111,8 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
             page = await context.new_page()
 
             attempt += 1
+            response = None
+
             try:
                 start_total = time.perf_counter()
                 response = await page.goto(
