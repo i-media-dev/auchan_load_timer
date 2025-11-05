@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -87,7 +88,7 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
 
         headers = {
             "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": url,
+            "Referer": "https://www.google.com/",
         }
 
         context = await browser.new_context(
@@ -141,7 +142,8 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
                 load_time
             )
             repeat_times_list.append(load_time)
-            time.sleep(TIMEOUT_REQUESTS)
+            await asyncio.sleep(TIMEOUT_REQUESTS)
+
         avg_time = round(sum(repeat_times_list) / len(repeat_times_list), 2)
         logging.info(
             '\nСреднее время загрузки страницы %s за %s попыток - %s',
