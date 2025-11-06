@@ -16,7 +16,7 @@ ALERT_ROBOT = 'robot/dead_bird-robot.png'
 REDUCTION = 1000
 """Константа для перевода в секунды."""
 
-REPEAT = 3
+REPEAT = 1
 """Количество загрузок страницы."""
 
 TIMEOUT_REQUESTS = 5
@@ -46,10 +46,6 @@ TIME_FORMAT = '%H:%M:%S'
 """Формат времени по умолчанию."""
 
 SHOPS = {
-    'pyaterochka': (
-        'https://5ka.ru/',
-        'https://5ka.ru/cart/',
-    ),
     'perekrestok': (
         'https://www.perekrestok.ru/',
         'https://www.perekrestok.ru/cart',

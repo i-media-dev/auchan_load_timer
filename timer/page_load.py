@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import random
 import time
 from datetime import datetime as dt
 from pathlib import Path
@@ -28,6 +29,7 @@ def send_bot_message(
     load_time: float,
     screenshot: str
 ) -> None:
+    """Функция отправки сообщений в телеграм."""
 
     # robot = CRY_ROBOT if page == 'main' else WAIT_ROBOT
 
@@ -64,55 +66,123 @@ def send_bot_message(
             logging.error(f'Пользователь {id} недоступен: {e}')
 
 
-@connection_db
+async def make_dir(output_file, file_name):
+    """Функция создает директорию и возваращает путь до файла."""
+    folder = Path('media') / Path(output_file.split('_')[0])
+    file_path = folder / file_name
+    folder.mkdir(parents=True, exist_ok=True)
+    return file_path
+
+
+async def save_html(page, html_file_path):
+    """Функция для сохранения html-файла."""
+    try:
+        html = await page.content()
+    except Exception as error:
+        logging.warning(
+            'Редкая ошибка JS-скрипт начал какую-то '
+            'навигацию не в тайминг: %s',
+            error
+        )
+        await page.wait_for_timeout(TIMEOUT_SCREENSHOT)
+        html = await page.content()
+
+    with open(html_file_path, 'w', encoding='utf-8') as f:
+        f.write(html)
+    logging.info('HTML сохранён → %s', html_file_path)
+
+
+async def save_screenshot(page, png_file_path):
+    """Функция для сохранения скриншота."""
+    await page.wait_for_timeout(TIMEOUT_SCREENSHOT)
+    await page.screenshot(path=png_file_path, full_page=True)
+    logging.info('Скриншот сохранён → %s', png_file_path)
+
+
+async def human_actions(page):
+    """Функция имитирующая поведение человека."""
+    await page.mouse.move(random.randint(100, 500), random.randint(100, 500))
+    await asyncio.sleep(random.uniform(0.5, 2))
+    scroll_amount = random.randint(100, 800)
+    await page.mouse.wheel(0, scroll_amount)
+    await asyncio.sleep(random.uniform(0.5, 2))
+
+
+# @connection_db
 async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
     ua = UserAgent()
     async with async_playwright() as p:
         attempt = 0
         repeat_times_list = []
-        cursor.execute('SHOW TABLES')
-        tables_list = [table[0] for table in cursor.fetchall()]
+
+        # cursor.execute('SHOW TABLES')
+        # tables_list = [table[0] for table in cursor.fetchall()]
 
         date_str = dt.now().strftime(DATE_FORMAT)
         time_str = dt.now().strftime(TIME_FORMAT)
 
-        browser = await p.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-blink-features=AutomationControlled"
-            ]
-        )
-
-        user_agent = ua.random
-
-        headers = {
-            "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": "https://www.google.com/",
-        }
-
-        context = await browser.new_context(
-            user_agent=user_agent,
-            viewport={'width': 1920, 'height': 1080},
-            java_script_enabled=True,
-        )
-        await context.set_extra_http_headers(headers)
-        page = await context.new_page()
-        logging.info('Начало загрузки страницы %s', output_file)
-
         while attempt < REPEAT:
 
-            await context.close()
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-dev-shm-usage",
+                    "--disable-web-security",
+                    "--disable-features=VizDisplayCompositor",
+                    "--disable-ipc-flooding-protection",
+                    "--disable-renderer-backgrounding",
+                    "--disable-backgrounding-occluded-windows",
+                    "--disable-background-timer-throttling",
+                    "--disable-client-side-phishing-detection",
+                    "--disable-popup-blocking",
+                    "--disable-hang-monitor",
+                    "--disable-sync",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                    "--disable-default-apps",
+                    "--disable-extensions",
+                    "--disable-translate",
+                    "--disable-component-extensions-with-background-pages",
+                ]
+            )
+
+            user_agent = ua.random
+
+            headers = {
+                "Accept": "text/html,application/xhtml+xml,application/"
+                "xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "DNT": "1",
+                "Upgrade-Insecure-Requests": "1",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+            }
+
             context = await browser.new_context(
                 user_agent=user_agent,
                 viewport={'width': 1920, 'height': 1080},
                 java_script_enabled=True,
+                bypass_csp=True,
+                ignore_https_errors=True,
             )
+
             await context.set_extra_http_headers(headers)
             page = await context.new_page()
+            await human_actions(page)
+            logging.info('Начало загрузки страницы %s', output_file)
 
             attempt += 1
             response = None
+            hour_str = time_str.split(':')[0]
+            png_file = f'{output_file}_{date_str}_{hour_str}.png'
+            html_file = f'{output_file}.html'
 
             try:
                 start_total = time.perf_counter()
@@ -133,6 +203,14 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
                 )
                 load_time = round(time.perf_counter() - start_total, 2)
 
+            finally:
+                png_file_path = await make_dir(output_file, png_file)
+                html_file_path = await make_dir(output_file, html_file)
+                await save_html(page, html_file_path)
+                await save_screenshot(page, png_file_path)
+                await context.close()
+                await browser.close()
+
             logging.info(
                 '\nПопытка %s/%s'
                 '\nОБЩЕЕ ВРЕМЯ ЗАГРУЗКИ %s: %s с',
@@ -151,57 +229,30 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
             REPEAT,
             avg_time
         )
-        try:
-            html = await page.content()
-        except Exception as error:
-            logging.warning(
-                'Редкая ошибка JS-скрипт начал какую-то '
-                'навигацию не в тайминг: %s',
-                error
-            )
-            await page.wait_for_timeout(TIMEOUT_SCREENSHOT)
-            html = await page.content()
 
-        files_path = Path('media') / Path(output_file.split('_')[0])
-        html_file = f'{output_file}.html'
-        html_file_path = files_path / html_file
-        files_path.mkdir(parents=True, exist_ok=True)
-        with open(html_file_path, 'w', encoding='utf-8') as f:
-            f.write(html)
-        logging.info('HTML сохранён → %s', html_file_path)
+        # page_name = output_file.split('_')[1]
+        # status_code = response.status if response else 0
+        # screenshot = f'{ADDRESS}{output_file.split('_')[0]}/{png_file}'
+        # if 'auchan' in output_file:
+        #     send_bot_message(url, status_code, avg_time, screenshot)
 
-        hour_str = time_str.split(':')[0]
-        png_file = f'{output_file}_{date_str}_{hour_str}.png'
-        png_file_path = files_path / png_file
-        await page.wait_for_timeout(TIMEOUT_SCREENSHOT)
-        await page.screenshot(path=png_file_path, full_page=True)
-        logging.info('Скриншот сохранён → %s', png_file_path)
+        # if TABLE_NAME in tables_list:
+        #     logging.info('Таблица %s найдена в базе', TABLE_NAME)
+        # else:
+        #     create_table_query = CREATE_REPORTS_MODEL.format(
+        #         table_name=TABLE_NAME
+        #     )
+        #     cursor.execute(create_table_query)
+        #     logging.info('Таблица %s успешно создана', TABLE_NAME)
 
-        page_name = output_file.split('_')[1]
-        status_code = response.status if response else 0
-        screenshot = f'{ADDRESS}{output_file.split('_')[0]}/{png_file}'
-        if 'auchan' in output_file:
-            send_bot_message(url, status_code, avg_time, screenshot)
-
-        if TABLE_NAME in tables_list:
-            logging.info('Таблица %s найдена в базе', TABLE_NAME)
-        else:
-            create_table_query = CREATE_REPORTS_MODEL.format(
-                table_name=TABLE_NAME
-            )
-            cursor.execute(create_table_query)
-            logging.info('Таблица %s успешно создана', TABLE_NAME)
-
-        query = INSERT_REPORT.format(table_name=TABLE_NAME)
-        params = [(
-            date_str,
-            time_str,
-            url,
-            page_name,
-            avg_time,
-            screenshot
-        )]
-        cursor.executemany(query, params)
-        logging.info('Данные сохранены')
-
-        await browser.close()
+        # query = INSERT_REPORT.format(table_name=TABLE_NAME)
+        # params = [(
+        #     date_str,
+        #     time_str,
+        #     url,
+        #     page_name,
+        #     avg_time,
+        #     screenshot
+        # )]
+        # cursor.executemany(query, params)
+        # logging.info('Данные сохранены')
