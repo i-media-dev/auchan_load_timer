@@ -46,22 +46,22 @@ TIME_FORMAT = '%H:%M:%S'
 """Формат времени по умолчанию."""
 
 SHOPS = {
-    'perekrestok': (
-        'https://www.perekrestok.ru/',
-        'https://www.perekrestok.ru/cart',
-    ),
-    'metro': (
-        'https://www.metro-cc.ru/',
-        'https://online.metro-cc.ru/cart/marketplace',
-    ),
+    # 'perekrestok': (
+    #     'https://www.perekrestok.ru/',
+    #     'https://www.perekrestok.ru/cart',
+    # ),
+    # 'metro': (
+    #     'https://www.metro-cc.ru/',
+    #     'https://online.metro-cc.ru/cart/marketplace',
+    # ),
     'auchan': (
         'https://www.auchan.ru/',
         'https://www.auchan.ru/cart/',
     ),
-    'globus': (
-        'https://online.globus.ru/',
-        'https://online.globus.ru/cart',
-    ),
+    # 'globus': (
+    #     'https://online.globus.ru/',
+    #     'https://online.globus.ru/cart',
+    # ),
 }
 """Словарь всех сайтов с urls главной страницы и корзины."""
 

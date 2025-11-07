@@ -20,7 +20,7 @@ from timer.logging_config import setup_logging
 
 setup_logging()
 
-eapteka_bot = TeleBot(os.getenv('AUCHAN_TOKEN_TELEGRAM'))
+auchan_bot = TeleBot(os.getenv('AUCHAN_TOKEN_TELEGRAM'))
 
 
 def send_bot_message(
@@ -38,8 +38,8 @@ def send_bot_message(
             try:
                 for id in CLIENT_IDS:
                     # with open(robot, 'rb') as photo:
-                    #     eapteka_bot.send_sticker(id, photo)
-                    eapteka_bot.send_message(
+                    #     auchan_bot.send_sticker(id, photo)
+                    auchan_bot.send_message(
                         chat_id=id,
                         text='Время ожидания ответа от сервера при загрузке '
                         f'страницы - {url} превысило критический '
@@ -53,8 +53,8 @@ def send_bot_message(
         try:
             for id in CLIENT_IDS:
                 with open(ALERT_ROBOT, 'rb') as photo:
-                    eapteka_bot.send_sticker(id, photo)
-                eapteka_bot.send_message(
+                    auchan_bot.send_sticker(id, photo)
+                auchan_bot.send_message(
                     chat_id=id,
                     text=f'При запросе на страницу - {url} сервер '
                     f'вернул код ответа: {status_code}. '
@@ -108,15 +108,15 @@ async def human_actions(page):
     await asyncio.sleep(random.uniform(0.5, 2))
 
 
-# @connection_db
+@connection_db
 async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
     ua = UserAgent()
     async with async_playwright() as p:
         attempt = 0
         repeat_times_list = []
 
-        # cursor.execute('SHOW TABLES')
-        # tables_list = [table[0] for table in cursor.fetchall()]
+        cursor.execute('SHOW TABLES')
+        tables_list = [table[0] for table in cursor.fetchall()]
 
         date_str = dt.now().strftime(DATE_FORMAT)
         time_str = dt.now().strftime(TIME_FORMAT)
@@ -230,29 +230,29 @@ async def measure_main_page_load_time(url: str, output_file: str, cursor=None):
             avg_time
         )
 
-        # page_name = output_file.split('_')[1]
-        # status_code = response.status if response else 0
-        # screenshot = f'{ADDRESS}{output_file.split('_')[0]}/{png_file}'
-        # if 'auchan' in output_file:
-        #     send_bot_message(url, status_code, avg_time, screenshot)
+        page_name = output_file.split('_')[1]
+        status_code = response.status if response else 0
+        screenshot = f'{ADDRESS}{output_file.split('_')[0]}/{png_file}'
+        if 'auchan' in output_file:
+            send_bot_message(url, status_code, avg_time, screenshot)
 
-        # if TABLE_NAME in tables_list:
-        #     logging.info('Таблица %s найдена в базе', TABLE_NAME)
-        # else:
-        #     create_table_query = CREATE_REPORTS_MODEL.format(
-        #         table_name=TABLE_NAME
-        #     )
-        #     cursor.execute(create_table_query)
-        #     logging.info('Таблица %s успешно создана', TABLE_NAME)
+        if TABLE_NAME in tables_list:
+            logging.info('Таблица %s найдена в базе', TABLE_NAME)
+        else:
+            create_table_query = CREATE_REPORTS_MODEL.format(
+                table_name=TABLE_NAME
+            )
+            cursor.execute(create_table_query)
+            logging.info('Таблица %s успешно создана', TABLE_NAME)
 
-        # query = INSERT_REPORT.format(table_name=TABLE_NAME)
-        # params = [(
-        #     date_str,
-        #     time_str,
-        #     url,
-        #     page_name,
-        #     avg_time,
-        #     screenshot
-        # )]
-        # cursor.executemany(query, params)
-        # logging.info('Данные сохранены')
+        query = INSERT_REPORT.format(table_name=TABLE_NAME)
+        params = [(
+            date_str,
+            time_str,
+            url,
+            page_name,
+            avg_time,
+            screenshot
+        )]
+        cursor.executemany(query, params)
+        logging.info('Данные сохранены')
